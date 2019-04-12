@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//chmod +x <filename>.sh
+
 #pragma config FNOSC = FRCPLL       // Internal Fast RC oscillator (8 MHz) w/ PLL
 #pragma config FPLLIDIV = DIV_2     // Divide FRC before PLL (now 4 MHz)
 #pragma config FPLLMUL = MUL_20     // PLL Multiply (now 80 MHz)
