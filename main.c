@@ -206,6 +206,7 @@ void main(void)
     delay_s(2);
     printf("\x1b[2J\x1b[1;1H"); // Clear screen using ANSI escape sequence.
     printf("Home Servo Code\n\r\n\r");
+    printf("Code Editing by Henry Bryant");
     while(1) {
         printf("Multimeter Voltage: %f V\r", ADCVoltage(MULTIMETER_PIN));
         LATBbits.LATB6 = 0;
