@@ -208,7 +208,7 @@ void main(void)
     printf("Home Servo Code\n\r\n\r");
     printf("Code Editing by Henry Bryant");
     while(1) {
-        printf("Multimeter Voltage: %f V\r", ADCVoltage(MULTIMETER_PIN));
+        //printf("Multimeter Voltage: %f V\r", ADCVoltage(MULTIMETER_PIN));
         LATBbits.LATB6 = 0;
         delay_s(0.2);
         //printf("\n\rTHE LIGHT IS OFF\n\r");
