@@ -13,10 +13,15 @@
 
 #define SYSCLK 40000000L
 #define FREQ 100000L // We need the ISR for timer 1 every 10 us
-#define BAUD_RATE 115200L
+#define Baud2BRG(desired_baud)( (SYSCLK / (16*desired_baud))-1)
 
 #define REF_VOLTAGE 3.3
-#define PIR_SENSOR 5 //pin7
+#define PIR_SENSOR 4 //pin11
+
+#define MULTIMETER_PIN 5
+
+#define SERVO_LOW 65
+#define SERVO_HIGH 200
 
 #define servo1 LATBbits.LATB5		//pin14
 #define servo2 LATBbits.LATB14		//pin25, horizontal
@@ -25,7 +30,6 @@ void ADCConf(void);
 int ADCRead(char analogPIN);
 float ADCVoltage(char analogPIN);
 
-#define Baud2BRG(desired_baud)( (SYSCLK / (16*desired_baud))-1)
  
 void UART2Configure(int baud_rate)
 {
@@ -40,7 +44,7 @@ void UART2Configure(int baud_rate)
     U2MODESET = 0x8000;     // enable UART2
 }
 
-volatile int ISR_pw_h, ISR_pw_v, ISR_cnt = 0, ISR_frc = 0;
+volatile int ISR_pw_h=100, ISR_pw_v=100, ISR_cnt = 0, ISR_frc = 0;
 
 
 // The Interrupt Service Routine for timer 1 is used to generate one or more standard
@@ -104,6 +108,16 @@ void delay_ms(int msecs)
 	ticks = msecs / 20;
 	while (ISR_frc < ticks)
 		;
+}
+
+void delay_s(float s) {
+    int ms = s * 1000;
+    delay_ms(ms);
+}
+
+void delay_min(float min) {
+    float s = min * 60;
+    delay_s(s);
 }
 // Good information about ADC in PIC32 found here:
 // http://umassamherstm5.org/tech-tutorials/pic32-tutorials/pic32mx220-tutorials/adc
@@ -171,9 +185,13 @@ void main(void)
 
     UART2Configure(115200);  // Configure UART2 for a baud rate of 115200
  
-    ANSELB &= ~(1<<3); // Set RB3 as a digital I/O
-    TRISB |= (1<<3);   // configure pin RB3 as input
-    CNPUB |= (1<<3);   // Enable pull-up resistor for RB3
+    ANSELB &= ~(1<<4); // Set RB4 as a digital I/O
+    TRISB |= (1<<4);   // configure pin RB4 as input
+    CNPUB |= (1<<4);   // Enable pull-up resistor for RB4
+
+    // Configure pins as analog inputs
+    ANSELBbits.ANSB3 = 1;   // set RB3 (AN5, pin 7 of DIP28) as analog pin
+    TRISBbits.TRISB3 = 1;   // set RB3 as an input
     
     TRISBbits.TRISB6 = 0;
 	LATBbits.LATB6 = 0;	
@@ -185,39 +203,42 @@ void main(void)
 
 	SetupTimer1(); // Set timer 1 (to interrupt every 10 us?)
     ADCConf(); //configure ADC
-    delay_ms(2000);
+    delay_s(2);
+    printf("\x1b[2J\x1b[1;1H"); // Clear screen using ANSI escape sequence.
     printf("Home Servo Code\n\r\n\r");
     while(1) {
-        printf("\n\rTHE LIGHT IS OFF\n\r");
-        if ( PORTBbits.RB3 == 0) {
-            delay_ms(500);
+        printf("Multimeter Voltage: %f V\r", ADCVoltage(MULTIMETER_PIN));
+        LATBbits.LATB6 = 0;
+        delay_s(0.2);
+        //printf("\n\rTHE LIGHT IS OFF\n\r");
+        
+        ISR_pw_v = SERVO_LOW;
+        delay_s(1);
+
+        if ( PORTBbits.RB4 == 0) {
+            //printf("Multimeter Voltage: %f V\r", ADCVoltage(MULTIMETER_PIN));
+            delay_s(0.75);
             
-            if (PORTBbits.RB3 == 0) { 
-                delay_ms(500);
+            if (PORTBbits.RB4 == 0) { 
+                //printf("Multimeter Voltage: %f V\r", ADCVoltage(MULTIMETER_PIN));
+                delay_s(0.75);
                 
-                if (PORTBbits.RB3 == 0) { 
-                    printf("\n\rThe Light is ON\n\r");
-                    LATBbits.LATB6 = 1;
-                    delay_ms(10*1000);
-                    
+                if (PORTBbits.RB4 == 0) { 
+                    //printf("Multimeter Voltage: %f V\r", ADCVoltage(MULTIMETER_PIN));
+                    delay_s(0.75);
+
+                    if (PORTBbits.RB4 == 0) { 
+                        //printf("Multimeter Voltage: %f V\r", ADCVoltage(MULTIMETER_PIN));
+
+                        ISR_pw_v = SERVO_HIGH;
+                        LATBbits.LATB6 = 1;
+                        delay_s(5.5);
+                        
+                    }
                 }
-                else
-                {
-                    LATBbits.LATB6 = 0;
-                }
-                
-            }
-            else
-            {
-                LATBbits.LATB6 = 0;
             }
             
-        }
-        else
-        {
-            LATBbits.LATB6 = 0;
         }
         
-        delay_ms(500);
     }
 }

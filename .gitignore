@@ -19,3 +19,6 @@
 *.d
 *.exe
 *.obj
+*COMPORT.inc
+*.vscode/
+*/.vscode/
